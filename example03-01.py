@@ -6,6 +6,9 @@ import torch.nn as nn
 import torch.nn.functional as F 
 from torchvision import transforms, datasets
 
+#03-04에 추가 
+import torch.nn.init as init
+
 if torch.cuda.is_available():
     DEVICE = torch.device('cuda')
 else:
@@ -99,7 +102,8 @@ class Net(nn.Module):
 ########################################
 
 ########################################
-## Ex3-3. Dropout + ReLU + Batch Normalization 
+## Ex3-4. Dropout + ReLU + Batch Normalization 
+'''
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
@@ -124,8 +128,78 @@ class Net(nn.Module):
         x = F.log_softmax(x, dim=1)
         return x 
 
+'''
+########################################
+
+########################################
+## Ex3-4. Dropout + ReLU + Batch Normalization + He Uniform Initialization
+'''
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        self.fc1 = nn.Linear(28*28, 512)
+        self.fc2 = nn.Linear(512, 256)
+        self.fc3 = nn.Linear(256, 10)
+        self.dropout_prob = 0.5
+        self.batch_norm1 = nn.BatchNorm1d(512)
+        self.batch_norm2 = nn.BatchNorm1d(256)
+
+    def forward(self, x):
+        x = x.view(-1, 28*28)
+        x = self.fc1(x)
+        x = self.batch_norm1(x)
+        x = F.relu(x)
+        x = F.dropout(x, training=self.training, p=self.dropout_prob)
+        x = self.fc2(x) 
+        x = self.batch_norm2(x)
+        x = F.relu(x)
+        x = F.dropout(x, training=self.training, p=self.dropout_prob)
+        x = self.fc3(x)
+        x = F.log_softmax(x, dim=1)
+        return x 
+
+def weight_init(m):
+    if isinstance(m, nn.Linear):
+        init.kaiming_uniform_(m.weight.data)
+'''
+########################################
+
+########################################
+## Ex3-5. Dropout + ReLU + Batch Normalization + He Uniform Initialization + Adam
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        self.fc1 = nn.Linear(28*28, 512)
+        self.fc2 = nn.Linear(512, 256)
+        self.fc3 = nn.Linear(256, 10)
+        self.dropout_prob = 0.5
+        self.batch_norm1 = nn.BatchNorm1d(512)
+        self.batch_norm2 = nn.BatchNorm1d(256)
+
+    def forward(self, x):
+        x = x.view(-1, 28*28)
+        x = self.fc1(x)
+        x = self.batch_norm1(x)
+        x = F.relu(x)
+        x = F.dropout(x, training=self.training, p=self.dropout_prob)
+        x = self.fc2(x) 
+        x = self.batch_norm2(x)
+        x = F.relu(x)
+        x = F.dropout(x, training=self.training, p=self.dropout_prob)
+        x = self.fc3(x)
+        x = F.log_softmax(x, dim=1)
+        return x 
+
+def weight_init(m):
+    if isinstance(m, nn.Linear):
+        init.kaiming_uniform_(m.weight.data)
+########################################
+
+
 model = Net().to(DEVICE)
-optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
+model.apply(weight_init)
+#optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 criterion = nn.CrossEntropyLoss()
 
 print(model)
